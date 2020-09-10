@@ -1,7 +1,7 @@
 Download Onivim 2
 =================
 
-Command line interface to authenticate with [Outrun Labs](https://www.outrunlabs.com/) and download the stable or nightly release of [Onivim 2](https://www.onivim.io/).
+Command line interface to authenticate with [Outrun Labs](https://www.outrunlabs.com/) and download the stable or nightly early access builds (alpha) of [Onivim 2](https://www.onivim.io/).
 
 ## Setup license key
 

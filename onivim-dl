@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 const fs = require("fs");
+const path = require("path");
 const os = require("os");
 require("dotenv").config();
 const util = require("util");
@@ -8,9 +9,9 @@ const fetch = require("node-fetch");
 const fileType = require("file-type");
 const streamPipeline = util.promisify(require("stream").pipeline);
 
-let key = "AIzaSyDxflsfyd2gloxgWJ-GFtPM46tz-TtOXh8";
-
+const key = "AIzaSyDxflsfyd2gloxgWJ-GFtPM46tz-TtOXh8";
 const baseUrl = "https://www.onivim.io";
+const cacheDir = `${__dirname}/cache`;
 
 /*
  * Validate license key
@@ -44,7 +45,10 @@ async function verifyCustomToken(token) {
   let response = await fetch(
     `https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyCustomToken?key=${key}`,
     {
-      body: `{"token":"${token}","returnSecureToken":true}`,
+      body: `{
+        "token": "${token}",
+        "returnSecureToken": true,
+      }`,
       method: "POST",
     }
   );
@@ -59,7 +63,9 @@ async function getAccountInfo(idToken) {
   let response = await fetch(
     `https://www.googleapis.com/identitytoolkit/v3/relyingparty/getAccountInfo?key=${key}`,
     {
-      body: `{"idToken":"${idToken}"}`,
+      body: `{
+        "idToken": "${idToken}",
+      }`,
       method: "POST",
     }
   );
@@ -72,9 +78,7 @@ async function getAccountInfo(idToken) {
  */
 async function getReleaseNotes() {
   // {{{
-  const response = await fetch("https://www.onivim.io/api/getReleaseNotes", {
-    referrer: "https://www.onivim.io/early-access-portal",
-  });
+  const response = await fetch(`${baseUrl}/api/getReleaseNotes`);
   return response.json();
 } // }}}
 
@@ -99,7 +103,11 @@ async function auth() {
   let { token } = await authLicenseKey(licenseKey);
   let { idToken } = await verifyCustomToken(token);
   if (!idToken) {
-    console.error(`Authenticating failed`, licenseKey, token, idToken);
+    console.error("Authenticating failed", {
+      licenseKey,
+      token,
+      idToken,
+    });
   }
   return idToken;
 } // }}}
@@ -107,23 +115,46 @@ async function auth() {
 /*
  * Download Onivim.
  */
-async function download({ platform, channel, token }) {
+async function download({
+  platform,
+  channel,
+  token,
+  branch,
+  version,
+  shortCommitId,
+}) {
   // {{{
-  const response = await fetch(
-    `https://v2.onivim.io/downloads/Onivim2-${platform}.tar.gz?channel=${channel}&token=${token}`
-  );
-
-  if (response.ok) {
-    return streamPipeline(
-      response.body,
-      fs.createWriteStream(`Onivim2-${platform}.tar.gz`)
-    );
+  if (!fs.existsSync(cacheDir)) {
+    fs.mkdirSync(cacheDir, { recursive: false });
   }
 
-  const buffer = await response.buffer();
-  const type = fileType.fromBuffer(buffer);
+  if (!platform || !channel || !token) {
+    console.error({
+      platform,
+      channel,
+      token,
+    });
+    process.exit(1);
+  }
 
-  console.log(type);
+  let url = `https://v2.onivim.io/downloads/Onivim2-${platform}.tar.gz?channel=${channel}&token=${token}`;
+  let filename = `Onivim2-${platform}-${branch}-${version}-${shortCommitId}.tar.gz`;
+
+  if (fs.existsSync(filename)) {
+    console.error("Already downloaded:", filename);
+    process.exit(0);
+  }
+
+  const response = await fetch(url);
+
+  if (response.ok) {
+    streamPipeline(
+      response.body,
+      fs.createWriteStream(`${cacheDir}/${filename}`)
+    );
+
+    fs.symlink(`${filename}`, `./cache/latest`, () => {});
+  }
 } // }}}
 
 /*
@@ -170,13 +201,20 @@ function main() {
         console.log(commitId);
       }
     )
-    .command("download", "Download Onivim", async (argv) => {
-      await download({
-        platform: argv.platform,
-        channel: argv.channel,
-        token: await auth(),
-      });
-    })
+    .command(
+      "download",
+      "Download Onivim",
+      () => {},
+      async ({ platform, channel }) => {
+        let idToken = await auth();
+        await download({
+          ...(await getDownloads(idToken, channel)),
+          token: idToken,
+          platform,
+          channel,
+        });
+      }
+    )
     .option("channel", {
       alias: "c",
       type: "string",
