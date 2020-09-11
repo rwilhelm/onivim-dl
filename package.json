@@ -6,10 +6,10 @@
     "installer",
     "cli"
   ],
-  "version": "0.3.9",
+  "version": "0.3.8",
   "main": "onivim-dl",
   "license": "MIT",
-  "repository": "https://git.sr.ht/~rxw/onivim-dl",
+  "repository": "git@git.sr.ht:~rxw/onivim-dl",
   "author": "rxw1@protonmail.com",
   "scripts": {
     "start": "node onivim-dl"
