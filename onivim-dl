@@ -7,7 +7,7 @@ const util = require("util");
 const fetch = require("node-fetch");
 const streamPipeline = util.promisify(require("stream").pipeline);
 
-const name = path.basename(__filename);
+const { name } = require("./package.json");
 const cacheDir = `${os.homedir()}/.cache/${name}`;
 require("dotenv").config({
   path: `${os.homedir()}/.config/${name}/licenseKey`,

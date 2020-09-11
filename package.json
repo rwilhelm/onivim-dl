@@ -1,13 +1,21 @@
 {
   "name": "onivim-dl",
   "description": "Onivim 2 Command Line Interface Download Utility",
-  "version": "0.3.1",
+  "keywords": [
+    "onivim",
+    "installer",
+    "cli"
+  ],
+  "version": "0.3.8",
   "main": "onivim-dl",
   "license": "MIT",
   "repository": "https://git.sr.ht/~rxw/onivim-dl",
   "author": "rxw1@protonmail.com",
   "scripts": {
     "start": "node onivim-dl"
+  },
+  "bin": {
+    "onivim-dl": "onivim-dl"
   },
   "dependencies": {
     "dotenv": "8.2.0",

@@ -1,10 +1,11 @@
 NAME=onivim-dl
 BIN_DIR=$(HOME)/.bin
+BIN_NAME=oni2
 INSTALL_DIR=$(HOME)/.opt/Onivim2
 CACHE_DIR=$(HOME)/.cache/$(NAME)
 CONFIG_DIR=$(HOME)/.config/$(NAME)
 
-EXEC=node $(NAME)
+EXEC=npm start --
 
 clean:
 	$(RM) -r $(CACHE_DIR)
@@ -19,8 +20,8 @@ install: download
 	@test -d $(INSTALL_DIR) || mkdir -pv $(INSTALL_DIR)
 	@echo "Installing to $(INSTALL_DIR)"
 	@tar xzf $(CACHE_DIR)/latest -C $(INSTALL_DIR) --strip-components=1 Onivim2.AppDir
-	@echo "Symlinking executable to $(BIN_DIR)/oni2"
-	@test -e ~/.bin/oni2 || ln -s $(INSTALL_DIR)/AppRun ~/.bin/oni2
+	@echo "Symlinking executable to $(BIN_DIR)/$(BIN_NAME)"
+	@test -e $(BIN_DIR)/$(BIN_NAME) || ln -s $(INSTALL_DIR)/AppRun $(BIN_DIR)/$(BIN_DIR)
 
 uninstall:
 	@echo $(RM) -r $(INSTALL_DIR)
