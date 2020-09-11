@@ -1,9 +1,11 @@
 {
   "name": "onivim-dl",
+  "description": "Onivim 2 Command Line Interface Download Utility",
   "version": "0.3.1",
   "main": "onivim-dl",
   "license": "MIT",
-  "author": "rene.wilhelm@gmail.com",
+  "repository": "https://git.sr.ht/~rxw/onivim-dl",
+  "author": "rxw1@protonmail.com",
   "scripts": {
     "start": "node onivim-dl"
   },

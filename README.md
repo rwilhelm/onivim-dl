@@ -1,20 +1,34 @@
-Download Onivim 2
-=================
+onivim-dl
+=========
 
-Command line interface to authenticate with [Outrun Labs](https://www.outrunlabs.com/) and download the stable or nightly early access builds (alpha) of [Onivim 2](https://www.onivim.io/).
+`Onivim 2 Command Line Interface Download Utility`
+
+> Command line interface to authenticate with [Outrun Labs](https://www.outrunlabs.com/) and
+> download the stable or nightly early access builds (alpha) of [Onivim 2](https://www.onivim.io/).
+
+## Installation
+```
+npm install -g onivim-dl
+```
+or
+```
+git clone https://git.sr.ht/~rxw/onivim-dl
+```
 
 ## Setup license key
 
-Pass `ONIVIM2_LICENSE_KEY` via your environment or put it in `.env` of the current directory:
-
+Pass `LICENSE_KEY` via your environment or put it in
 ```
-ONIVIM2_LICENSE_KEY=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+~/.config/onivim-dl/licenseKey
+```
+
+The file should look like this:
+```
+LICENSE_KEY=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 ```
 
 ## Usage
-
 ```
-
 onivim-dl [command]
 
 Commands:
@@ -27,8 +41,7 @@ Commands:
 Options:
       --help      Show help                                            [boolean]
       --version   Show version number                                  [boolean]
-  -c, --channel   Select channel                    [string] [default: "stable"]
+  -b, --branch    Select branch                     [string] [default: "stable"]
   -p, --platform  Select platform                    [string] [default: "linux"]
   -v, --verbose   Verbose output                                       [boolean]
-
 ```

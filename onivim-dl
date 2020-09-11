@@ -3,15 +3,18 @@
 const fs = require("fs");
 const path = require("path");
 const os = require("os");
-require("dotenv").config();
 const util = require("util");
 const fetch = require("node-fetch");
-const fileType = require("file-type");
 const streamPipeline = util.promisify(require("stream").pipeline);
 
-const key = "AIzaSyDxflsfyd2gloxgWJ-GFtPM46tz-TtOXh8";
+const name = path.basename(__filename);
+const cacheDir = `${os.homedir()}/.cache/${name}`;
+require("dotenv").config({
+  path: `${os.homedir()}/.config/${name}/licenseKey`,
+});
+
 const baseUrl = "https://www.onivim.io";
-const cacheDir = `${__dirname}/cache`;
+const key = "AIzaSyDxflsfyd2gloxgWJ-GFtPM46tz-TtOXh8";
 
 /*
  * Validate license key
@@ -86,10 +89,10 @@ async function getReleaseNotes() {
  * Get information about currently available downloads.
  * Requires authentication.
  */
-async function getDownloads(token, channel) {
+async function getDownloads(token, branch) {
   // {{{
   let response = await fetch(
-    `${baseUrl}/api/getDownloads?channel=${channel}&token=${token}`
+    `${baseUrl}/api/getDownloads?channel=${branch}&token=${token}`
   );
   return response.json();
 } // }}}
@@ -99,7 +102,16 @@ async function getDownloads(token, channel) {
  */
 async function auth() {
   // {{{
-  let licenseKey = process.env.ONIVIM2_LICENSE_KEY;
+  let licenseKey = process.env.LICENSE_KEY;
+
+  if (!licenseKey) {
+    console.error(
+      `Err: ~/.config/${name}/licenseKey must have\n` +
+        `LICENSE_KEY=XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX`
+    );
+    process.exit(1);
+  }
+
   let { token } = await authLicenseKey(licenseKey);
   let { idToken } = await verifyCustomToken(token);
   if (!idToken) {
@@ -115,46 +127,53 @@ async function auth() {
 /*
  * Download Onivim.
  */
-async function download({
-  platform,
-  channel,
-  token,
-  branch,
-  version,
-  shortCommitId,
-}) {
+async function download({ branch, platform, shortCommitId, token, version }) {
   // {{{
+
+  /* Create cache dir */
   if (!fs.existsSync(cacheDir)) {
-    fs.mkdirSync(cacheDir, { recursive: false });
+    fs.mkdirSync(cacheDir, { recursive: true });
   }
 
-  if (!platform || !channel || !token) {
+  if (!platform || !branch || !token) {
     console.error({
       platform,
-      channel,
+      branch,
       token,
     });
     process.exit(1);
   }
 
-  let url = `https://v2.onivim.io/downloads/Onivim2-${platform}.tar.gz?channel=${channel}&token=${token}`;
-  let filename = `Onivim2-${platform}-${branch}-${version}-${shortCommitId}.tar.gz`;
+  /* Get release info */
+  let releaseInfo = await getDownloads(token, branch);
+  console.log(releaseInfo);
+
+  /* Handle suprisingly different server respones (Wtf) */
+  let url = releaseInfo.hasOwnProperty("artifacts")
+    ? // Download from Google Storage
+      releaseInfo.artifacts[platform].tar
+    : // Download from Outrun Labs
+      `https://v2.onivim.io/downloads/Onivim2-${platform}.tar.gz?channel=${branch}&token=${token}`;
+
+  /* Local download filename */
+  let filename = `${cacheDir}/Onivim2-${platform}-${branch}-${version}-${shortCommitId}.tar.gz`;
 
   if (fs.existsSync(filename)) {
     console.error("Already downloaded:", filename);
     process.exit(0);
   }
 
+  /* Download */
+  console.log({ filename, url: url.split(token.slice(0, 8))[0] + "..." });
   const response = await fetch(url);
 
   if (response.ok) {
-    streamPipeline(
-      response.body,
-      fs.createWriteStream(`${cacheDir}/${filename}`)
-    );
-
-    fs.symlink(`${filename}`, `./cache/latest`, () => {});
+    /* Save to file */
+    streamPipeline(response.body, fs.createWriteStream(filename));
   }
+
+  /* Symlink latest version for convenience */
+  fs.symlink(filename, `${path.dirname(filename)}/latest`, () => {});
 } // }}}
 
 /*
@@ -176,9 +195,9 @@ function main() {
       "cur",
       "Get current version",
       () => {},
-      async ({ channel }) => {
+      async ({ branch }) => {
         let idToken = await auth();
-        let response = await getDownloads(idToken, channel);
+        let response = await getDownloads(idToken, branch);
         console.log(response);
       }
     )
@@ -186,9 +205,9 @@ function main() {
       "account",
       "Get user account info",
       () => {},
-      async ({ channel }) => {
+      async ({ branch }) => {
         let idToken = await auth();
-        let { users } = await getAccountInfo(idToken, channel);
+        let { users } = await getAccountInfo(idToken, branch);
         console.log(users[0]);
       }
     )
@@ -205,20 +224,20 @@ function main() {
       "download",
       "Download Onivim",
       () => {},
-      async ({ platform, channel }) => {
+      async ({ platform, branch }) => {
         let idToken = await auth();
         await download({
-          ...(await getDownloads(idToken, channel)),
+          ...(await getDownloads(idToken, branch)),
           token: idToken,
           platform,
-          channel,
+          branch,
         });
       }
     )
-    .option("channel", {
-      alias: "c",
+    .option("branch", {
+      alias: "b",
       type: "string",
-      description: "Select channel",
+      description: "Select branch",
       default: "stable",
     })
     .option("platform", {
