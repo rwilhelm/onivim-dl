@@ -6,7 +6,7 @@
     "installer",
     "cli"
   ],
-  "version": "0.3.10",
+  "version": "0.3.11",
   "main": "onivim-dl",
   "license": "MIT",
   "repository": "git@git.sr.ht:~rxw/onivim-dl",
